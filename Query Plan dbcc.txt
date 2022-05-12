@@ -1,0 +1,36 @@
+-- To get the Plan Handler, Execution count, timing of it.
+select plan_handle, creation_time, last_execution_time, execution_count, qt.text
+FROM
+sys.dm_exec_query_stats qs
+CROSS APPLY sys.dm_exec_sql_text (qs.[sql_handle]) AS qt
+WHERE qt.text LIKE '%usp_DATAVAL_RECON_FPOWGT%'
+ORDER BY 2
+
+
+-- To get the Execution Plan , plan Handler, executions
+select c.plan_handle,qs.query_plan,qt.text,qt.objectid,qt.dbid,
+c.usecounts,c.cacheobjtype
+FROM
+sys.dm_exec_cached_plans c
+cross apply
+   sys.dm_exec_query_plan(c.plan_handle) as qs
+   CROSS APPLY sys.dm_exec_sql_text (c.[plan_handle]) AS qt
+WHERE qt.text LIKE '%usp_DATAVAL_RECON_FPOWGT%'
+
+
+
+Using DBCC FREEPROCCACHE (plan_handle_id_)
+ 
+SELECT
+[qs].[last_execution_time],
+[qs].[execution_count],
+[qs].[total_logical_reads]/[qs].[execution_count] [AvgLogicalReads],
+[qs].[max_logical_reads],
+t.text,
+[qs].[plan_handle],
+[p].[query_plan]
+FROM sys.dm_exec_query_stats [qs]
+CROSS APPLY sys.dm_exec_sql_text([qs].sql_handle) [t]
+CROSS APPLY sys.dm_exec_query_plan([qs].[plan_handle]) [p]
+WHERE [t].text LIKE '%nsp_Get_HistoryData_GICUS_FTP_FILTER%';
+GO
