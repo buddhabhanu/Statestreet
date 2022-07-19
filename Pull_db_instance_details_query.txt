@@ -1,0 +1,39 @@
+select @@SERVERNAMe as Server_Name, @@SERVICENAME as Instance_Name,substring(@@version,1,28) as SQLVersion,SERVERPROPERTY('Collation') as Server_Collation,
+
+count(d.database_id) as DB_count,
+
+(select sum((cast(size as float)*8)/1024/1024) from sys.master_files where type_desc='ROWS' and database_id not in(1,2,3,4)) as DataSize_in_GB,
+
+(select sum((cast(size as float)*8)/1024/1024) from sys.master_files where type_desc='LOG' and database_id not in(1,2,3,4)) as LogSize_in_GB,
+
+(select service_account from sys.dm_server_services where servicename='SQL Server (MSSQLSERVER)') as Service_account,
+
+(SELECT case  when value=0 then 'Disabled'
+
+when value=1 then 'Enabled'
+
+end  FROM sys.configurations WHERE name = 'backup compression default') as Backup_compression ,
+
+(select count(Name) from sys.servers where Name  not in(@@SERVERNAME)) as Linked_server_count,
+
+(select cpu_count from sys.dm_os_sys_info) as CPU,
+
+--(select physical_memory_kb/1024/1024 from sys.dm_os_sys_info) as Memory_In_GB
+
+(select physical_memory_in_bytes/1024/1024/1024 from sys.dm_os_sys_info) as Memory_In_GB
+
+from sys.databases D join sys.master_files m on d.database_id=m.database_id  where d.database_id>4 and d.name <>'audit'
+
+ 
+
+** To view the Installed services, Run this in Powershell.
+
+ 
+
+select +'Get-Service *SQL* -ComputerName '+@@SERVERNAME
+
+select +'Get-Service *OLAP* -ComputerName '+@@SERVERNAME
+
+select +'Get-Service *DTS* -ComputerName '+@@SERVERNAME
+
+select +'Get-Service *REPORT* -ComputerName '+@@SERVERNAME
