@@ -1,16 +1,34 @@
 We have to Download the Kerbroses configuration manager for SQL server and then Install.
 
+After the Go to the location where you installed and click on Kerbrosemgr.exe
+It will show the Missing items for SQL and other as well... Then Generate the output and open it in txt.
+You will see the commands.
+
+To view the Status of the SPN
+
+in CMD, 
+setspn -l <Hostname>
 
 
 
+--If you have service account and to remove it and add New. Below is the cmd
+
+-- To deregister the entry
 SetSPN -d "MSSQLSvc/USJHSQ922.phibred.com" "phibred\amersql2"
 SetSPN -d "MSSQLSvc/USJHSQ922.phibred.com:1600" "phibred\amersql2"
+
+-- Tp register the entry
 SetSPN -s "MSSQLSvc/USJHSQ922.phibred.com" "PHIBRED\amersql1"
 SetSPN -s "MSSQLSvc/USJHSQ922.phibred.com:1600" "PHIBRED\amersql1"
 
+OR
 
+-- If you do not have service account the change the port if not pointing to correct port number.
+
+-- To deregister the entry
 setspn -d MSSQLSvc/DCCPWPG0008.ga.ssga.root:1433 DCCPWPG0008
 setspn -d MSSQLSvc/DCCPWPG0008.ga.ssga.root DCCPWPG0008
 
+-- Tp register the entry
 setspn -s MSSQLSvc/DCCPWPG0008.ga.ssga.root:1733 DCCPWPG0008
 setspn -s MSSQLSvc/DCCPWPG0008.ga.ssga.root DCCPWPG0008
