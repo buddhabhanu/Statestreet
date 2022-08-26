@@ -1,0 +1,16 @@
+We have to Download the Kerbroses configuration manager for SQL server and then Install.
+
+
+
+
+SetSPN -d "MSSQLSvc/USJHSQ922.phibred.com" "phibred\amersql2"
+SetSPN -d "MSSQLSvc/USJHSQ922.phibred.com:1600" "phibred\amersql2"
+SetSPN -s "MSSQLSvc/USJHSQ922.phibred.com" "PHIBRED\amersql1"
+SetSPN -s "MSSQLSvc/USJHSQ922.phibred.com:1600" "PHIBRED\amersql1"
+
+
+setspn -d MSSQLSvc/DCCPWPG0008.ga.ssga.root:1433 DCCPWPG0008
+setspn -d MSSQLSvc/DCCPWPG0008.ga.ssga.root DCCPWPG0008
+
+setspn -s MSSQLSvc/DCCPWPG0008.ga.ssga.root:1733 DCCPWPG0008
+setspn -s MSSQLSvc/DCCPWPG0008.ga.ssga.root DCCPWPG0008
