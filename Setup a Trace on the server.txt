@@ -1,0 +1,53 @@
+-- Create a Queue
+declare @rc int
+declare @TraceID int
+declare @maxfilesize bigint
+declare @DateTime datetime
+declare @tracefile nvarchar(256)
+declare @servername varchar(50)
+
+set @servername = ( select @@SERVERNAME)
+set @tracefile = 'D:\trace\' + @servername + '_'+ CONVERT (varchar(30),GETDATE(),112)
+set @DateTime = dateadd(mi,10080, getdate())
+set @maxfilesize = 5120
+
+exec @rc = sp_trace_create @TraceID output, 0, @tracefile, @maxfilesize, @Datetime
+if (@rc != 0) goto error
+
+-- Set the events
+declare @on bit
+set @on = 1
+exec sp_trace_setevent @TraceID, 14, 1, @on	--TextData
+exec sp_trace_setevent @TraceID, 14, 9, @on	--ClientProcessID
+exec sp_trace_setevent @TraceID, 14, 2, @on	--BinaryData
+exec sp_trace_setevent @TraceID, 14, 10, @on -- ApplicationName
+exec sp_trace_setevent @TraceID, 14, 11, @on --LoginName
+exec sp_trace_setevent @TraceID, 14, 6, @on --NTUserName
+exec sp_trace_setevent @TraceID, 14, 8, @on --HostName
+exec sp_trace_setevent @TraceID, 14, 12, @on --SPID
+exec sp_trace_setevent @TraceID, 14, 14, @on --StartTime
+exec sp_trace_setevent @TraceID, 14, 35, @on --DatabaseName
+exec sp_trace_setevent @TraceID, 14, 64, @on --SessionLoginName
+exec sp_trace_setevent @TraceID, 14, 26, @on --ServerName
+
+-- Set the Filters
+declare @intfilter int
+declare @bigintfilter bigint
+
+exec sp_trace_setfilter @TraceID, 10, 0, 7, N'%Profiler%'
+--exec sp_trace_setfilter @TraceID, 35, 0, 6, N'Storage'
+
+-- Set the trace status to start
+exec sp_trace_setstatus @TraceID, 1
+
+--exec sp_trace_setstatus 3, 2
+
+-- display trace id for future references
+select TraceID=@TraceID
+goto finish
+
+error: 
+select ErrorCode=@rc
+
+finish: 
+go

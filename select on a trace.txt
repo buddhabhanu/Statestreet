@@ -1,0 +1,7 @@
+
+
+
+-- Select the trace
+SELECT distinct(LoginName), DatabaseName,HostName,ApplicationName
+FROM ::fn_trace_gettable('D:\trace\JHSQ16_20220207.trc', Default)
+where LoginName not in ('NT AUTHORITY\SYSTEM', 'phibred\ppp723','PHIBRED\amersql2', 'PHIBRED\mywizsql_svc','PHIBRED\rubriksvc')
