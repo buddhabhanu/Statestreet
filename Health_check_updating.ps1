@@ -1,4 +1,4 @@
-﻿FOREACH($server in GC "D:\Powershell\SQL_Report_auto\ServerList.txt")
+FOREACH($server in GC "D:\Powershell\SQL_Report_auto\ServerList.txt")
  {
 	#invoke-expression -Command "&'D:\Powershell\Health_check_updating.ps1' -ComputerName $server"  
 $ComputerName=$server
@@ -162,7 +162,15 @@ Select name ,  Status_count from #Serviceaccount
 
 
 
-drop table #Serviceaccount"
+drop table #Serviceaccount
+
+Create Table ##HealthFlag (Name varchar(100))
+
+Insert Into ##HealthFlag
+select case when count(Status)=3 then 'GREEN' else 'RED' END  from sys.dm_server_services where status_desc ='Running'
+
+
+"
 
 $results.Services = Invoke-SqlQuery -connectionString $connectionString -query $query
 
@@ -179,6 +187,9 @@ Insert into #SQLconnectivity
 select 'SQL Server Connectivity Check',count(*) from master.sys.tables
 
 select * from #SQLconnectivity
+
+Insert Into ##HealthFlag
+select case when count(*)>0 then 'GREEN' else 'RED' END from master.sys.tables
 
 drop table #SQLconnectivity"
 
@@ -197,6 +208,9 @@ Insert into #SQLDatabases
 select  'SQL Databases Health Check',count(database_id) from sys.databases  where database_id not in(1,2,3,4) and user_access_desc <>'MULTI_USER' or is_read_only=1 or state_desc<>'ONLINE'
 
 Select * from #SQLDatabases
+
+Insert Into ##HealthFlag
+select  case When count(database_id)>0 then 'RED' else 'GREEN' END from sys.databases  where database_id not in(1,2,3,4) and user_access_desc <>'MULTI_USER' or is_read_only=1 or state_desc<>'ONLINE'
 
 drop table #SQLDatabases"
 
@@ -235,6 +249,9 @@ select 'SQL Error Log Checks in Last 4 Hrs ',count(loginfo) from #ErrorLogInfo_a
 
 
 select * from #ErrorLog_count
+
+Insert Into ##HealthFlag
+select case when Error_count=0 then 'GREEN' else 'RED' end from #ErrorLog_count
 
 drop table #ErrorLogInfo_all
 
@@ -290,10 +307,22 @@ SELECT 'SQL OrphanedUsers Check on All DBs',count(*) as Orphaned_Count FROM #Orp
 
 select * from #Orphan_count
 
+Insert Into ##HealthFlag
+select case when count(Orphaned_Count)=0 then 'GREEN' else 'RED' END  from #Orphan_count
+
 drop table #OrphanedUsers
 Drop table #Orphan_count "
 
 $results.SQLOrphaned = Invoke-SqlQuery -connectionString $connectionString -query $query
+
+
+###### To Get Summary Status GREEN or RED #################
+
+$query='select case when count(name)=5 then ''GREEN'' else ''RED'' end from ##HealthFlag where Name = ''GREEN''
+
+Drop table ##HealthFlag'
+
+$results.Summary = Invoke-SqlQuery -connectionString $connectionString -query $query
 
 
 # Get database size
@@ -532,6 +561,38 @@ cellSpacing="0" cellPadding="0" width="933" border="2">'
 $html | Out-File -FilePath $htmlFilePath
 
 Write-Host "SQL Server health check completed. HTML report generated at $htmlFilePath."
+
+###################### Send the HTML report Through the SQL DB Mail ########################################
+
+# Define the path to your HTML file
+
+
+# Read the contents of the HTML file
+$htmlContent = Get-Content -Path $htmlFilePath -Raw
+
+# SQL Server connection details
+$serverName = "your_server_name"
+$databaseName = "msdb"
+$smtpServer = "your_smtp_server"
+$mailProfile = "your_mail_profile_name"
+$recipient = "recipient@example.com"
+$subject = "Summary Health Check for the SQL Server "+ $server +" is " + "$results.Summary.name"
+
+# Build the SQL query to send the HTML email
+$query = @"
+EXEC msdb.dbo.sp_send_dbmail
+    @profile_name = '$mailProfile',
+    @recipients = '$recipient',
+    @subject = '$subject',
+    @body = '',
+    @body_format = 'HTML',
+    @file_attachments = '$htmlFilePath'
+"@
+
+# Execute the SQL query
+Invoke-Sqlcmd -ServerInstance $serverName -Database $databaseName -Query $query -QueryTimeout 0 -SmtpServer $smtpServer
+
+
 }
 
 
